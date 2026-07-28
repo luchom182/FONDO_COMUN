@@ -46,8 +46,9 @@ export function subscribeToAppData(onDataReceived, onError) {
  */
 export async function saveAppData(data) {
   try {
+    const cleanData = JSON.parse(JSON.stringify(data));
     await setDoc(APP_DOC_REF, {
-      ...data,
+      ...cleanData,
       updatedAt: new Date().toISOString()
     }, { merge: true });
     return true;

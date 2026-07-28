@@ -65,6 +65,7 @@ export const validateDataStructure = (raw) => {
 
 export default function App() {
   const isRemoteUpdateRef = useRef(false);
+  const isFirstLoadRef = useRef(true);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
 
   // Persistence state
@@ -105,10 +106,12 @@ export default function App() {
           saveAppData({ ...data, adminPass, recoveryKey });
           setIsCloudSynced(true);
         }
+        isFirstLoadRef.current = false;
       },
       (err) => {
         console.warn('Fallback a modo offline local:', err);
         setIsCloudSynced(false);
+        isFirstLoadRef.current = false;
       }
     );
 
@@ -125,6 +128,10 @@ export default function App() {
 
     if (isRemoteUpdateRef.current) {
       isRemoteUpdateRef.current = false;
+      return;
+    }
+
+    if (isFirstLoadRef.current) {
       return;
     }
 
