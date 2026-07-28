@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { INITIAL_DATA } from './initialData';
+import { subscribeToAppData, saveAppData } from './firebase';
 import * as XLSX from 'xlsx';
 import confetti from 'canvas-confetti';
 import {
@@ -63,6 +64,9 @@ export const validateDataStructure = (raw) => {
 };
 
 export default function App() {
+  const isRemoteUpdateRef = useRef(false);
+  const [isCloudSynced, setIsCloudSynced] = useState(false);
+
   // Persistence state
   const [data, setData] = useState(() => {
     try {
@@ -77,7 +81,7 @@ export default function App() {
     return INITIAL_DATA;
   });
 
-  // Admin Password & Recovery Key Persistence (Stored privately, NEVER exposed in UI)
+  // Admin Password & Recovery Key Persistence
   const [adminPass, setAdminPass] = useState(() => {
     return localStorage.getItem('fondo_comun_admin_password') || 'admin123';
   });
@@ -86,23 +90,48 @@ export default function App() {
     return localStorage.getItem('fondo_comun_recovery_key') || '8888';
   });
 
+  // Real-time Firebase Firestore Sync
+  useEffect(() => {
+    const unsubscribe = subscribeToAppData(
+      (cloudData) => {
+        if (cloudData) {
+          isRemoteUpdateRef.current = true;
+          setData(validateDataStructure(cloudData));
+          if (cloudData.adminPass) setAdminPass(cloudData.adminPass);
+          if (cloudData.recoveryKey) setRecoveryKey(cloudData.recoveryKey);
+          setIsCloudSynced(true);
+        } else {
+          // Document does not exist in Firestore yet: seed it with current state
+          saveAppData({ ...data, adminPass, recoveryKey });
+          setIsCloudSynced(true);
+        }
+      },
+      (err) => {
+        console.warn('Fallback a modo offline local:', err);
+        setIsCloudSynced(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // Save changes locally and sync to Firebase when updated
   useEffect(() => {
     try {
       localStorage.setItem('fondo_comun_data_v1', JSON.stringify(data));
-    } catch (e) {}
-  }, [data]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem('fondo_comun_admin_password', adminPass);
-    } catch (e) {}
-  }, [adminPass]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem('fondo_comun_recovery_key', recoveryKey);
     } catch (e) {}
-  }, [recoveryKey]);
+
+    if (isRemoteUpdateRef.current) {
+      isRemoteUpdateRef.current = false;
+      return;
+    }
+
+    saveAppData({ ...data, adminPass, recoveryKey }).then((success) => {
+      if (success) setIsCloudSynced(true);
+    });
+  }, [data, adminPass, recoveryKey]);
 
   // Auth & UI States
   const [isAdmin, setIsAdmin] = useState(false);
@@ -458,7 +487,26 @@ export default function App() {
               <Wallet size={24} />
             </div>
             <div>
-              <h1 className="logo-title">Fondo Común</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h1 className="logo-title">Fondo Común</h1>
+                <span 
+                  style={{ 
+                    fontSize: '0.72rem', 
+                    fontWeight: 600,
+                    padding: '0.2rem 0.5rem', 
+                    borderRadius: '12px',
+                    background: isCloudSynced ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                    color: isCloudSynced ? '#10b981' : '#f59e0b',
+                    border: `1px solid ${isCloudSynced ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '0.3rem' 
+                  }}
+                  title={isCloudSynced ? "Conectado a Firebase - Sincronizado en tiempo real con todos los dispositivos" : "Guardado en modo offline local"}
+                >
+                  {isCloudSynced ? '🟢 Nube Activa' : '🟡 Modo Local'}
+                </span>
+              </div>
               <div className="logo-subtitle">Control Presupuestal • Almacén-Logística</div>
             </div>
           </div>
