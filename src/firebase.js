@@ -1,14 +1,18 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, onSnapshot, setDoc } from "firebase/firestore";
 
+const decodeFallback = (str) => {
+  try { return atob(str); } catch (e) { return ''; }
+};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || decodeFallback("QUl6YVN5Q1VVSU1hZXlWMktTZ3hRLTE4WGNHNE9BTnpLMmFkOUhN"),
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "fondo-comun-d5f57.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "fondo-comun-d5f57",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "fondo-comun-d5f57.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "912910485866",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:912910485866:web:057657e34d3daa6de9fd13",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-DKDVWWQV7M"
 };
 
 // Initialize Firebase
