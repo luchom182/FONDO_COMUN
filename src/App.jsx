@@ -758,7 +758,9 @@ export default function App() {
               <div>
                 <h3 style={{ fontSize: '1.2rem', color: '#fff' }}>Tabla de Aportes - {selectedMonth}</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Haz clic en el número de celular para abrir un chat directo por WhatsApp con mensaje predefinido.
+                  {isAdmin 
+                    ? "Haz clic en el número de celular para abrir un chat directo por WhatsApp con mensaje predefinido." 
+                    : "El envío de mensajes y recordatorios por WhatsApp es exclusivo del Modo Administrador."}
                 </p>
               </div>
 
@@ -812,23 +814,39 @@ export default function App() {
                           </div>
                         </td>
                         <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                          <button 
-                            style={{ 
-                              background: 'none', 
-                              border: 'none', 
-                              color: '#34d399', 
-                              cursor: 'pointer', 
-                              display: 'inline-flex', 
-                              alignItems: 'center', 
-                              gap: '0.35rem', 
-                              fontFamily: 'inherit',
-                              fontSize: 'inherit' 
-                            }}
-                            onClick={() => openDirectWhatsApp(member)}
-                            title="Abrir chat directo en WhatsApp"
-                          >
-                            <MessageCircle size={13} /> {member.phone}
-                          </button>
+                          {isAdmin ? (
+                            <button 
+                              style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                color: '#34d399', 
+                                cursor: 'pointer', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.35rem', 
+                                fontFamily: 'inherit',
+                                fontSize: 'inherit' 
+                              }}
+                              onClick={() => openDirectWhatsApp(member)}
+                              title="Abrir chat directo en WhatsApp (Modo Admin)"
+                            >
+                              <MessageCircle size={13} /> {member.phone}
+                            </button>
+                          ) : (
+                            <span 
+                              style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.35rem', 
+                                color: 'var(--text-dim)', 
+                                cursor: 'pointer' 
+                              }}
+                              onClick={() => setShowLoginModal(true)}
+                              title="Acceso restringido: Inicia sesión como Administrador para enviar mensajes"
+                            >
+                              <Phone size={13} /> {member.phone}
+                            </span>
+                          )}
                         </td>
                         
                         {/* Q1 */}
@@ -863,14 +881,25 @@ export default function App() {
 
                         <td style={{ textAlign: 'center' }}>
                           {!isComplete ? (
-                            <button 
-                              className="btn btn-outline"
-                              style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}
-                              onClick={() => sendWhatsAppReminder(member, pendingQuincenas)}
-                              title="Enviar recordatorio amistoso por WhatsApp"
-                            >
-                              <Send size={12} /> Recordatorio
-                            </button>
+                            isAdmin ? (
+                              <button 
+                                className="btn btn-outline"
+                                style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}
+                                onClick={() => sendWhatsAppReminder(member, pendingQuincenas)}
+                                title="Enviar recordatorio amistoso por WhatsApp"
+                              >
+                                <Send size={12} /> Recordatorio
+                              </button>
+                            ) : (
+                              <button 
+                                className="btn btn-outline"
+                                style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'rgba(148, 163, 184, 0.15)', color: 'var(--text-dim)', opacity: 0.7 }}
+                                onClick={() => setShowLoginModal(true)}
+                                title="Solo el Administrador puede enviar recordatorios por WhatsApp"
+                              >
+                                <Lock size={12} /> Solo Admin
+                              </button>
+                            )
                           ) : (
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>--</span>
                           )}
