@@ -368,8 +368,12 @@ export default function App() {
     });
   };
 
-  // Open Direct WhatsApp Chat with General Pre-defined Message
+  // Open Direct WhatsApp Chat with General Pre-defined Message (Admin Only)
   const openDirectWhatsApp = (member) => {
+    if (!isAdmin) {
+      setShowLoginModal(true);
+      return;
+    }
     if (!member || !member.phone) return;
     const cleanNum = sanitizePhone(member.phone);
     if (!cleanNum) return;
@@ -380,8 +384,12 @@ export default function App() {
     window.open(`https://wa.me/57${cleanNum}?text=${defaultMsg}`, '_blank');
   };
 
-  // Send WhatsApp Pending Reminder Message
+  // Send WhatsApp Pending Reminder Message (Admin Only)
   const sendWhatsAppReminder = (member, pendingQuincenas = []) => {
+    if (!isAdmin) {
+      setShowLoginModal(true);
+      return;
+    }
     if (!member || !member.phone) return;
     const cleanNum = sanitizePhone(member.phone);
     if (!cleanNum) return;

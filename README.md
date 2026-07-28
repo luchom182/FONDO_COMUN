@@ -25,12 +25,12 @@ Aplicación Web ultramoderna para la gestión, control presupuestal y transparen
 1. **Consultar Aportes del Mes**:
    - En la página principal, selecciona el mes a auditar (ej. *Julio*) en el menú desplegable.
    - Observa la tabla donde verás quiénes están al día y quiénes tienen cuotas pendientes ($10.000 COP).
-2. **Chat Directo con Integrantes**:
-   - Haz clic sobre el número celular de cualquier participante para abrir un chat de WhatsApp con el mensaje predefinido: `"Hola [Nombre], te escribo respecto al Fondo Común de Almacén-Logística. ¡Un saludo!"`.
+2. **Chat Directo con Integrantes (Exclusivo Administrador)**:
+   - Haz clic sobre el número celular de cualquier participante para abrir un chat de WhatsApp con mensaje predefinido (Requiere inicio de sesión como Administrador).
 3. **Ver Integrantes Pendientes**:
    - Haz clic en el botón u opción **"Ver Pendientes"** para consultar únicamente la lista de compañeros con saldo pendiente.
-4. **Enviar Recordatorio de Pago**:
-   - Presiona **"Recordatorio"** junto al nombre de una persona pendiente para enviarle la información de su cuota.
+4. **Enviar Recordatorio de Pago (Exclusivo Administrador)**:
+   - Presiona **"Recordatorio"** junto al nombre de una persona pendiente para enviarle la información de su cuota (Exclusivo para el Administrador).
 5. **Ver Gastos Justificados**:
    - Ingresa a la pestaña **"Registro de Gastos"** para fiscalizar en qué se ha invertido el dinero del fondo.
 6. **Descargar Copia en Excel**:
