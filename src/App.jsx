@@ -30,7 +30,9 @@ import {
   HelpCircle,
   Key,
   RotateCcw,
-  MessageCircle
+  MessageCircle,
+  UserPlus,
+  Cake
 } from 'lucide-react';
 
 // Format COP Currency with number safety
@@ -177,11 +179,37 @@ export default function App() {
   });
   const [expenseError, setExpenseError] = useState('');
 
+  // Add Member Modal
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [memberForm, setMemberForm] = useState({ name: '', phone: '', birthday: '' });
+  const [memberError, setMemberError] = useState('');
+
   // Safe Members & Periods arrays
   const membersList = useMemo(() => Array.isArray(data?.members) ? data.members : [], [data]);
   const periodsList = useMemo(() => Array.isArray(data?.periods) ? data.periods : [], [data]);
   const paymentsList = useMemo(() => Array.isArray(data?.payments) ? data.payments : [], [data]);
   const expensesList = useMemo(() => Array.isArray(data?.expenses) ? data.expenses : [], [data]);
+
+  // Birthday members this month
+  const birthdayMembersThisMonth = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1; // 1-12
+    return membersList.filter(m => {
+      if (!m.birthday) return false;
+      const d = new Date(m.birthday + 'T12:00:00'); // avoid timezone shift
+      return (d.getMonth() + 1) === currentMonth;
+    }).map(m => {
+      const d = new Date(m.birthday + 'T12:00:00');
+      const now2 = new Date();
+      const age = now2.getFullYear() - d.getFullYear();
+      return { ...m, age, day: d.getDate(), monthName: d.toLocaleString('es-ES', { month: 'long' }) };
+    }).sort((a, b) => a.day - b.day);
+  }, [membersList]);
+
+  // Current month name for hero
+  const currentMonthName = useMemo(() => {
+    return new Date().toLocaleString('es-ES', { month: 'long' }).toUpperCase();
+  }, []);
 
   // List of distinct months
   const availableMonths = useMemo(() => {
@@ -402,6 +430,46 @@ export default function App() {
     window.open(`https://wa.me/57${cleanNum}?text=${text}`, '_blank');
   };
 
+  // Add Member (Admin only)
+  const handleAddMember = (e) => {
+    e.preventDefault();
+    setMemberError('');
+
+    const name = (memberForm.name || '').trim();
+    const phone = (memberForm.phone || '').trim();
+    const birthday = (memberForm.birthday || '').trim();
+
+    if (!name) {
+      setMemberError('El nombre es obligatorio.');
+      return;
+    }
+    if (!phone) {
+      setMemberError('El número de celular es obligatorio.');
+      return;
+    }
+    if (!birthday) {
+      setMemberError('La fecha de cumpleaños es obligatoria.');
+      return;
+    }
+
+    const newMember = {
+      id: 'member_' + Date.now(),
+      name,
+      phone,
+      birthday
+    };
+
+    setData(prev => ({
+      ...prev,
+      members: [...(Array.isArray(prev.members) ? prev.members : []), newMember]
+    }));
+
+    setShowAddMemberModal(false);
+    setMemberForm({ name: '', phone: '', birthday: '' });
+    setMemberError('');
+    try { confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } }); } catch (err) {}
+  };
+
   // Add Expense
   const handleAddExpense = (e) => {
     e.preventDefault();
@@ -539,6 +607,13 @@ export default function App() {
 
             {isAdmin ? (
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  className="btn btn-emerald"
+                  onClick={() => setShowAddMemberModal(true)}
+                  title="Añadir nuevo integrante al fondo"
+                >
+                  <UserPlus size={16} /> Añadir Persona
+                </button>
                 <button className="btn btn-outline" onClick={() => setShowChangePassModal(true)} title="Cambiar clave de admin">
                   <Key size={16} /> Cambiar Clave
                 </button>
@@ -562,32 +637,79 @@ export default function App() {
       {/* Main Container */}
       <main className="app-container">
 
-        {/* Hero Banner */}
-        <section className="hero-banner glass-panel">
-          <div>
-            <div className="hero-tag">
-              <Sparkles size={14} style={{ color: '#06b6d4' }} /> Control Presupuestal 2026
+        {/* Hero Banner — Cumpleañeros del Mes */}
+        <section className="hero-banner glass-panel" style={{ flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', width: '100%' }}>
+            <div>
+              <div className="hero-tag">
+                <Cake size={14} style={{ color: '#f472b6' }} /> Cumpleaños de {currentMonthName}
+              </div>
+              <h2 className="hero-title" style={{ color: '#fff' }}>
+                {birthdayMembersThisMonth.length > 0
+                  ? `🎂 ${birthdayMembersThisMonth.length === 1 ? '¡1 cumpleañero este mes!' : `¡${birthdayMembersThisMonth.length} cumpleañeros este mes!`}`
+                  : 'Sin cumpleaños este mes'}
+              </h2>
+              {birthdayMembersThisMonth.length === 0 && (
+                <p className="hero-description">
+                  Ningún integrante celebra cumpleaños en {currentMonthName}.
+                </p>
+              )}
             </div>
-            <h2 className="hero-title">Estado de Aportes y Gastos</h2>
-            <p className="hero-description">
-              Revisa fácilmente quiénes están al día, quiénes tienen cuotas pendientes y en qué se ha invertido el dinero del fondo.
-            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button 
+                className={`btn ${activeTab === 'monthly' ? 'btn-emerald' : 'btn-outline'}`}
+                onClick={() => setActiveTab('monthly')}
+              >
+                <Calendar size={18} /> Vista Mensual de Aportes
+              </button>
+              <button 
+                className={`btn ${activeTab === 'pending' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setActiveTab('pending')}
+              >
+                <AlertTriangle size={18} /> Ver Pendientes ({monthStats.pendingCount})
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button 
-              className={`btn ${activeTab === 'monthly' ? 'btn-emerald' : 'btn-outline'}`}
-              onClick={() => setActiveTab('monthly')}
-            >
-              <Calendar size={18} /> Vista Mensual de Aportes
-            </button>
-            <button 
-              className={`btn ${activeTab === 'pending' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setActiveTab('pending')}
-            >
-              <AlertTriangle size={18} /> Ver Pendientes ({monthStats.pendingCount})
-            </button>
-          </div>
+          {/* Tarjetas de cumpleañeros */}
+          {birthdayMembersThisMonth.length > 0 && (
+            <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', width: '100%' }}>
+              {birthdayMembersThisMonth.map(m => (
+                <div
+                  key={m.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    background: 'linear-gradient(135deg, rgba(244, 114, 182, 0.12), rgba(139, 92, 246, 0.12))',
+                    border: '1px solid rgba(244, 114, 182, 0.3)',
+                    borderRadius: '14px',
+                    padding: '0.65rem 1.1rem',
+                    minWidth: '200px',
+                    flex: '1 1 200px',
+                    maxWidth: '280px'
+                  }}
+                >
+                  <div style={{
+                    width: 42, height: 42, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(244,114,182,0.3), rgba(139,92,246,0.3))',
+                    border: '2px solid rgba(244,114,182,0.5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.2rem', flexShrink: 0
+                  }}>
+                    🎂
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', lineHeight: 1.2 }}>{m.name}</div>
+                    <div style={{ fontSize: '0.76rem', color: '#f9a8d4', marginTop: '0.15rem' }}>
+                      {m.day} de {m.monthName} • {m.age} años
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Key Financial Metrics */}
@@ -1408,6 +1530,79 @@ export default function App() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
                 <button type="button" className="btn btn-outline" onClick={() => setShowAddExpenseModal(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-emerald">Guardar Gasto</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* AÑADIR INTEGRANTE MODAL (solo admin) */}
+      {showAddMemberModal && (
+        <div className="modal-overlay" onClick={() => setShowAddMemberModal(false)}>
+          <div className="modal-card glass-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <UserPlus size={20} style={{ color: '#10b981' }} />
+                <h3 className="modal-title">Añadir Nuevo Integrante</h3>
+              </div>
+              <button className="close-btn" onClick={() => setShowAddMemberModal(false)}>✕</button>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              Completa los tres campos obligatorios para registrar al nuevo integrante en el Fondo Común.
+            </p>
+
+            <form onSubmit={handleAddMember}>
+              <div className="form-group">
+                <label className="form-label">Nombre Completo *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Ej: Juan Carlos Pérez"
+                  value={memberForm.name}
+                  onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Número de Celular *</label>
+                <input
+                  type="tel"
+                  className="form-input"
+                  placeholder="Ej: 3001234567"
+                  value={memberForm.phone}
+                  onChange={(e) => setMemberForm({ ...memberForm, phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Fecha de Cumpleaños *</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={memberForm.birthday}
+                  onChange={(e) => setMemberForm({ ...memberForm, birthday: e.target.value })}
+                  required
+                />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '0.2rem', display: 'block' }}>
+                  Esta fecha se usará para mostrar los cumpleaños del mes en el panel principal.
+                </span>
+              </div>
+
+              {memberError && (
+                <div style={{ color: '#fca5a5', fontSize: '0.8rem', marginBottom: '1rem', background: 'rgba(244, 63, 94, 0.1)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
+                  {memberError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="button" className="btn btn-outline" onClick={() => { setShowAddMemberModal(false); setMemberError(''); }}>Cancelar</button>
+                <button type="submit" className="btn btn-emerald">
+                  <UserPlus size={16} /> Guardar Integrante
+                </button>
               </div>
             </form>
           </div>
