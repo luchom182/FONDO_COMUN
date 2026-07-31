@@ -7,140 +7,160 @@ export const INITIAL_DATA = {
       "number": "1",
       "code": "46110",
       "phone": "3183845272",
-      "name": "ANDRES VASQUEZ"
+      "name": "ANDRES VASQUEZ",
+      "birthday": "29/03"
     },
     {
       "id": "2",
       "number": "2",
       "code": "46111",
       "phone": "3167175648",
-      "name": "HUBER PACHECO"
+      "name": "HUBER PACHECO",
+      "birthday": "30/03"
     },
     {
       "id": "3",
       "number": "3",
       "code": "46122",
       "phone": "3177561186",
-      "name": "ALEXANDER OSPINA COND."
+      "name": "ALEXANDER OSPINA COND.",
+      "birthday": ""
     },
     {
       "id": "4",
       "number": "4",
       "code": "46123",
       "phone": "3054783666",
-      "name": "ANGEL CISNEROS"
+      "name": "ANGEL CISNEROS",
+      "birthday": "11/04"
     },
     {
       "id": "5",
       "number": "5",
       "code": "46127",
       "phone": "3117717498",
-      "name": "OSCAR AGUDELO"
+      "name": "OSCAR AGUDELO",
+      "birthday": "15/04"
     },
     {
       "id": "6",
       "number": "6",
       "code": "46137",
       "phone": "3154577760",
-      "name": "ANDRES SANABRIA"
+      "name": "ANDRES SANABRIA",
+      "birthday": "25/04"
     },
     {
       "id": "7",
       "number": "7",
       "code": "46148",
       "phone": "3108962137",
-      "name": "ALVARO CERON"
+      "name": "ALVARO CERON",
+      "birthday": "06/05"
     },
     {
       "id": "8",
       "number": "8",
       "code": "46149",
       "phone": "3128455968",
-      "name": "MARLON DAGUA ALM."
+      "name": "MARLON DAGUA ALM.",
+      "birthday": "07/05"
     },
     {
       "id": "9",
       "number": "9",
       "code": "46156",
       "phone": "3102106047",
-      "name": "EDWAR ZAPATA"
+      "name": "EDWAR ZAPATA",
+      "birthday": "14/05"
     },
     {
       "id": "10",
       "number": "10",
       "code": "46170",
       "phone": "3233404730",
-      "name": "DALIA KARINA CASTILLO"
+      "name": "DALIA KARINA CASTILLO",
+      "birthday": "28/05"
     },
     {
       "id": "11",
       "number": "11",
       "code": "46188",
       "phone": "3174965915",
-      "name": "FIDEL QUIÑONEZ"
+      "name": "FIDEL QUIÑONEZ",
+      "birthday": "15/06"
     },
     {
       "id": "12",
       "number": "12",
       "code": "46206",
       "phone": "3125160632",
-      "name": "DANIEL UNDA"
+      "name": "DANIEL UNDA",
+      "birthday": "03/07"
     },
     {
       "id": "13",
       "number": "13",
       "code": "46233",
       "phone": "3102105952",
-      "name": "CARLOS GUZMAN"
+      "name": "CARLOS GUZMAN",
+      "birthday": "30/07"
     },
     {
       "id": "14",
       "number": "14",
       "code": "46266",
       "phone": "3154149350",
-      "name": "ANDRES TORRES"
+      "name": "ANDRES TORRES",
+      "birthday": "01/09"
     },
     {
       "id": "15",
       "number": "15",
       "code": "46282",
       "phone": "3167051432",
-      "name": "MAURICIO VANEGAS"
+      "name": "MAURICIO VANEGAS",
+      "birthday": "17/09"
     },
     {
       "id": "16",
       "number": "16",
       "code": "46314",
       "phone": "3102269604",
-      "name": "ANNY SULGEY IPIA"
+      "name": "ANNY SULGEY IPIA",
+      "birthday": "19/10"
     },
     {
       "id": "17",
       "number": "17",
       "code": "46360",
       "phone": "3104607757",
-      "name": "CARLOS SANCHEZ"
+      "name": "CARLOS SANCHEZ",
+      "birthday": "04/12"
     },
     {
       "id": "18",
       "number": "18",
       "code": "46367",
       "phone": "3217544305",
-      "name": "ALAN DUVAN TROCHEZ"
+      "name": "ALAN DUVAN TROCHEZ",
+      "birthday": "11/12"
     },
     {
       "id": "19",
       "number": "19",
       "code": "46376",
       "phone": "3136922596",
-      "name": "FABIAN RODRIGUEZ"
+      "name": "FABIAN RODRIGUEZ",
+      "birthday": "20/12"
     },
     {
       "id": "20",
       "number": "20",
       "code": "46380",
       "phone": "3028283369",
-      "name": "ALEXANDER MARIN JEFE ALM."
+      "name": "ALEXANDER MARIN JEFE ALM.",
+      "birthday": "24/12"
     }
   ],
   "periods": [

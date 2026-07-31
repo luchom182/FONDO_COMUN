@@ -99,7 +99,17 @@ export default function App() {
       (cloudData) => {
         if (cloudData) {
           isRemoteUpdateRef.current = true;
-          setData(validateDataStructure(cloudData));
+          const validated = validateDataStructure(cloudData);
+
+          // Migration: if cloud members are missing birthday, merge from INITIAL_DATA
+          const birthdayMap = {};
+          INITIAL_DATA.members.forEach(m => { if (m.birthday) birthdayMap[m.id] = m.birthday; });
+          const migratedMembers = validated.members.map(m =>
+            (!m.birthday && birthdayMap[m.id]) ? { ...m, birthday: birthdayMap[m.id] } : m
+          );
+          const migratedData = { ...validated, members: migratedMembers };
+
+          setData(migratedData);
           if (cloudData.adminPass) setAdminPass(cloudData.adminPass);
           if (cloudData.recoveryKey) setRecoveryKey(cloudData.recoveryKey);
           setIsCloudSynced(true);
@@ -181,7 +191,7 @@ export default function App() {
 
   // Add Member Modal
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-  const [memberForm, setMemberForm] = useState({ name: '', phone: '', birthday: '' });
+  const [memberForm, setMemberForm] = useState({ name: '', phone: '', birthdayDay: '', birthdayMonth: '' });
   const [memberError, setMemberError] = useState('');
 
   // Safe Members & Periods arrays
@@ -190,19 +200,21 @@ export default function App() {
   const paymentsList = useMemo(() => Array.isArray(data?.payments) ? data.payments : [], [data]);
   const expensesList = useMemo(() => Array.isArray(data?.expenses) ? data.expenses : [], [data]);
 
-  // Birthday members this month
+  // Birthday members this month — format DD/MM (e.g. "29/03")
   const birthdayMembersThisMonth = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1; // 1-12
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     return membersList.filter(m => {
       if (!m.birthday) return false;
-      const d = new Date(m.birthday + 'T12:00:00'); // avoid timezone shift
-      return (d.getMonth() + 1) === currentMonth;
+      const parts = String(m.birthday).split('/');
+      if (parts.length < 2) return false;
+      return parseInt(parts[1], 10) === currentMonth;
     }).map(m => {
-      const d = new Date(m.birthday + 'T12:00:00');
-      const now2 = new Date();
-      const age = now2.getFullYear() - d.getFullYear();
-      return { ...m, age, day: d.getDate(), monthName: d.toLocaleString('es-ES', { month: 'long' }) };
+      const parts = String(m.birthday).split('/');
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      const monthName = MONTH_NAMES[month - 1] || '';
+      return { ...m, day, monthName };
     }).sort((a, b) => a.day - b.day);
   }, [membersList]);
 
@@ -437,7 +449,8 @@ export default function App() {
 
     const name = (memberForm.name || '').trim();
     const phone = (memberForm.phone || '').trim();
-    const birthday = (memberForm.birthday || '').trim();
+    const day = memberForm.birthdayDay;
+    const month = memberForm.birthdayMonth;
 
     if (!name) {
       setMemberError('El nombre es obligatorio.');
@@ -447,10 +460,13 @@ export default function App() {
       setMemberError('El número de celular es obligatorio.');
       return;
     }
-    if (!birthday) {
-      setMemberError('La fecha de cumpleaños es obligatoria.');
+    if (!day || !month) {
+      setMemberError('La fecha de cumpleaños (día y mes) es obligatoria.');
       return;
     }
+
+    // Store as DD/MM
+    const birthday = `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}`;
 
     const newMember = {
       id: 'member_' + Date.now(),
@@ -465,7 +481,7 @@ export default function App() {
     }));
 
     setShowAddMemberModal(false);
-    setMemberForm({ name: '', phone: '', birthday: '' });
+    setMemberForm({ name: '', phone: '', birthdayDay: '', birthdayMonth: '' });
     setMemberError('');
     try { confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } }); } catch (err) {}
   };
@@ -703,7 +719,7 @@ export default function App() {
                   <div>
                     <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', lineHeight: 1.2 }}>{m.name}</div>
                     <div style={{ fontSize: '0.76rem', color: '#f9a8d4', marginTop: '0.15rem' }}>
-                      {m.day} de {m.monthName} • {m.age} años
+                      {m.day} de {m.monthName}
                     </div>
                   </div>
                 </div>
@@ -1579,16 +1595,37 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Fecha de Cumpleaños *</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={memberForm.birthday}
-                  onChange={(e) => setMemberForm({ ...memberForm, birthday: e.target.value })}
-                  required
-                />
+                <label className="form-label">Fecha de Cumpleaños * <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>(día y mes)</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <select
+                      className="form-select"
+                      value={memberForm.birthdayDay}
+                      onChange={(e) => setMemberForm({ ...memberForm, birthdayDay: e.target.value })}
+                      required
+                    >
+                      <option value="">Día</option>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <select
+                      className="form-select"
+                      value={memberForm.birthdayMonth}
+                      onChange={(e) => setMemberForm({ ...memberForm, birthdayMonth: e.target.value })}
+                      required
+                    >
+                      <option value="">Mes</option>
+                      {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((mes, i) => (
+                        <option key={i+1} value={i+1}>{mes}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '0.2rem', display: 'block' }}>
-                  Esta fecha se usará para mostrar los cumpleaños del mes en el panel principal.
+                  Se guardará como DD/MM. Ej: 29 de Marzo → 29/03
                 </span>
               </div>
 
@@ -1599,7 +1636,7 @@ export default function App() {
               )}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-                <button type="button" className="btn btn-outline" onClick={() => { setShowAddMemberModal(false); setMemberError(''); }}>Cancelar</button>
+                <button type="button" className="btn btn-outline" onClick={() => { setShowAddMemberModal(false); setMemberError(''); setMemberForm({ name: '', phone: '', birthdayDay: '', birthdayMonth: '' }); }}>Cancelar</button>
                 <button type="submit" className="btn btn-emerald">
                   <UserPlus size={16} /> Guardar Integrante
                 </button>
