@@ -24,7 +24,7 @@ export const INITIAL_DATA = {
       "code": "46122",
       "phone": "3177561186",
       "name": "ALEXANDER OSPINA COND.",
-      "birthday": ""
+      "birthday": "10/04"
     },
     {
       "id": "4",
