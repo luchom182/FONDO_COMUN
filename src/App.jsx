@@ -32,7 +32,8 @@ import {
   RotateCcw,
   MessageCircle,
   UserPlus,
-  Cake
+  Cake,
+  Pencil
 } from 'lucide-react';
 
 // Format COP Currency with number safety
@@ -193,6 +194,11 @@ export default function App() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberForm, setMemberForm] = useState({ name: '', phone: '', birthdayDay: '', birthdayMonth: '' });
   const [memberError, setMemberError] = useState('');
+
+  // Edit Member Modal
+  const [showEditMemberModal, setShowEditMemberModal] = useState(false);
+  const [editMemberForm, setEditMemberForm] = useState({ id: '', name: '', phone: '', birthdayDay: '', birthdayMonth: '' });
+  const [editMemberError, setEditMemberError] = useState('');
 
   // Safe Members & Periods arrays
   const membersList = useMemo(() => Array.isArray(data?.members) ? data.members : [], [data]);
@@ -484,6 +490,47 @@ export default function App() {
     setMemberForm({ name: '', phone: '', birthdayDay: '', birthdayMonth: '' });
     setMemberError('');
     try { confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } }); } catch (err) {}
+  };
+
+  // Open Edit Member Modal (pre-fill form)
+  const handleOpenEditMember = (member) => {
+    const parts = member.birthday ? String(member.birthday).split('/') : [];
+    setEditMemberForm({
+      id: member.id,
+      name: member.name || '',
+      phone: member.phone || '',
+      birthdayDay: parts[0] ? parseInt(parts[0], 10).toString() : '',
+      birthdayMonth: parts[1] ? parseInt(parts[1], 10).toString() : ''
+    });
+    setEditMemberError('');
+    setShowEditMemberModal(true);
+  };
+
+  // Save Edited Member
+  const handleSaveEditMember = (e) => {
+    e.preventDefault();
+    setEditMemberError('');
+
+    const name = (editMemberForm.name || '').trim();
+    const phone = (editMemberForm.phone || '').trim();
+    const day = editMemberForm.birthdayDay;
+    const month = editMemberForm.birthdayMonth;
+
+    if (!name) { setEditMemberError('El nombre es obligatorio.'); return; }
+    if (!phone) { setEditMemberError('El número de celular es obligatorio.'); return; }
+    if (!day || !month) { setEditMemberError('La fecha de cumpleaños es obligatoria.'); return; }
+
+    const birthday = `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}`;
+
+    setData(prev => ({
+      ...prev,
+      members: (Array.isArray(prev.members) ? prev.members : []).map(m =>
+        m.id === editMemberForm.id ? { ...m, name, phone, birthday } : m
+      )
+    }));
+
+    setShowEditMemberModal(false);
+    try { confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } }); } catch (err) {}
   };
 
   // Add Expense
@@ -1018,29 +1065,41 @@ export default function App() {
                         </td>
 
                         <td style={{ textAlign: 'center' }}>
-                          {!isComplete ? (
-                            isAdmin ? (
-                              <button 
+                          <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', alignItems: 'center' }}>
+                            {isAdmin && (
+                              <button
                                 className="btn btn-outline"
-                                style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}
-                                onClick={() => sendWhatsAppReminder(member, pendingQuincenas)}
-                                title="Enviar recordatorio amistoso por WhatsApp"
+                                style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem', borderColor: 'rgba(99,102,241,0.35)', color: '#a5b4fc' }}
+                                onClick={() => handleOpenEditMember(member)}
+                                title="Editar datos del integrante"
                               >
-                                <Send size={12} /> Recordatorio
+                                <Pencil size={12} />
                               </button>
+                            )}
+                            {!isComplete ? (
+                              isAdmin ? (
+                                <button 
+                                  className="btn btn-outline"
+                                  style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'rgba(245,158,11,0.3)', color: '#fbbf24' }}
+                                  onClick={() => sendWhatsAppReminder(member, pendingQuincenas)}
+                                  title="Enviar recordatorio amistoso por WhatsApp"
+                                >
+                                  <Send size={12} /> Recordatorio
+                                </button>
+                              ) : (
+                                <button 
+                                  className="btn btn-outline"
+                                  style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'rgba(148, 163, 184, 0.15)', color: 'var(--text-dim)', opacity: 0.7 }}
+                                  onClick={() => setShowLoginModal(true)}
+                                  title="Solo el Administrador puede enviar recordatorios por WhatsApp"
+                                >
+                                  <Lock size={12} /> Solo Admin
+                                </button>
+                              )
                             ) : (
-                              <button 
-                                className="btn btn-outline"
-                                style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', borderColor: 'rgba(148, 163, 184, 0.15)', color: 'var(--text-dim)', opacity: 0.7 }}
-                                onClick={() => setShowLoginModal(true)}
-                                title="Solo el Administrador puede enviar recordatorios por WhatsApp"
-                              >
-                                <Lock size={12} /> Solo Admin
-                              </button>
-                            )
-                          ) : (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>--</span>
-                          )}
+                              isAdmin ? null : <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>--</span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1639,6 +1698,91 @@ export default function App() {
                 <button type="button" className="btn btn-outline" onClick={() => { setShowAddMemberModal(false); setMemberError(''); setMemberForm({ name: '', phone: '', birthdayDay: '', birthdayMonth: '' }); }}>Cancelar</button>
                 <button type="submit" className="btn btn-emerald">
                   <UserPlus size={16} /> Guardar Integrante
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDITAR INTEGRANTE MODAL (solo admin) */}
+      {showEditMemberModal && (
+        <div className="modal-overlay" onClick={() => setShowEditMemberModal(false)}>
+          <div className="modal-card glass-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Pencil size={20} style={{ color: '#a5b4fc' }} />
+                <h3 className="modal-title">Editar Integrante</h3>
+              </div>
+              <button className="close-btn" onClick={() => setShowEditMemberModal(false)}>✕</button>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              Modifica los datos del integrante. Los cambios se sincronizarán en tiempo real.
+            </p>
+
+            <form onSubmit={handleSaveEditMember}>
+              <div className="form-group">
+                <label className="form-label">Nombre Completo *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editMemberForm.name}
+                  onChange={(e) => setEditMemberForm({ ...editMemberForm, name: e.target.value })}
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Número de Celular *</label>
+                <input
+                  type="tel"
+                  className="form-input"
+                  value={editMemberForm.phone}
+                  onChange={(e) => setEditMemberForm({ ...editMemberForm, phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Fecha de Cumpleaños * <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>(día y mes)</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <select
+                    className="form-select"
+                    value={editMemberForm.birthdayDay}
+                    onChange={(e) => setEditMemberForm({ ...editMemberForm, birthdayDay: e.target.value })}
+                    required
+                  >
+                    <option value="">Día</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="form-select"
+                    value={editMemberForm.birthdayMonth}
+                    onChange={(e) => setEditMemberForm({ ...editMemberForm, birthdayMonth: e.target.value })}
+                    required
+                  >
+                    <option value="">Mes</option>
+                    {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((mes, i) => (
+                      <option key={i+1} value={i+1}>{mes}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {editMemberError && (
+                <div style={{ color: '#fca5a5', fontSize: '0.8rem', marginBottom: '1rem', background: 'rgba(244, 63, 94, 0.1)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
+                  {editMemberError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="button" className="btn btn-outline" onClick={() => setShowEditMemberModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary">
+                  <Pencil size={15} /> Guardar Cambios
                 </button>
               </div>
             </form>
