@@ -16,7 +16,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 const APP_DOC_REF = doc(db, "fondo_comun", "app_data");
@@ -28,6 +28,10 @@ const APP_DOC_REF = doc(db, "fondo_comun", "app_data");
  * @returns Unsubscribe function
  */
 export function subscribeToAppData(onDataReceived, onError) {
+  if (import.meta.env.VITE_FIREBASE_ENABLED === 'false') {
+    onError?.(new Error('Firebase desactivado en este entorno.'));
+    return () => {};
+  }
   return onSnapshot(
     APP_DOC_REF,
     (snapshot) => {
@@ -49,6 +53,7 @@ export function subscribeToAppData(onDataReceived, onError) {
  * @param {Object} data Objeto con { title, quotaAmount, members, periods, payments, expenses }
  */
 export async function saveAppData(data) {
+  if (import.meta.env.VITE_FIREBASE_ENABLED === 'false') return false;
   try {
     const cleanData = JSON.parse(JSON.stringify(data));
     await setDoc(APP_DOC_REF, {

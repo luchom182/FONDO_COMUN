@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Existing public fund: preserve compatibility with the original application.
+    match /fondo_comun/app_data {
+      allow read, write: if true;
+    }
+    // A shared link permits consultation, never direct writes or enumeration.
+    match /savings_workspaces/{workspaceId} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+    match /workspace_secrets/{document} { allow read, write: if false; }
+    match /workspace_attempts/{document} { allow read, write: if false; }
+  }
+}

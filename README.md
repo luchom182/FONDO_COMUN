@@ -4,6 +4,77 @@ Aplicación Web ultramoderna para la gestión, control presupuestal y transparen
 
 ---
 
+## Workspaces de ahorro común
+
+La barra **Workspace** permite cambiar entre el fondo original y nuevos fondos independientes.
+
+1. Pulsa **Nuevo workspace** y define nombre, meta de ahorro, cuota sugerida y fecha objetivo opcional.
+2. Elige dónde guardar el fondo y define su clave de administrador y su clave de recuperación (mínimo 8 caracteres).
+3. Añade integrantes y registra sus aportes. La cuota se propone como monto inicial y se puede ajustar en cada aporte.
+4. Registra los gastos: el avance de la meta usa el saldo neto, **aportes menos gastos**.
+5. Consulta movimientos por mes, tipo o búsqueda; revisa los acumulados de cada integrante y exporta el workspace a Excel.
+6. En un workspace compartido, **Compartir** copia el enlace de consulta. La administración requiere la clave de ese fondo.
+
+### Local y compartido
+
+- **Local:** funciona inmediatamente; datos y claves se guardan en este navegador. No se comparte entre dispositivos ni se convierte automáticamente en un fondo remoto. La exportación Excel permite conservar un reporte.
+- **Compartido:** datos en Firestore, consulta por enlace y cambios autorizados mediante Cloud Functions. El directorio del selector guarda los fondos creados o abiertos en cada navegador; no publica un listado global.
+- Cambiar de workspace cambia también el contexto de administración. Las sesiones compartidas duran 8 horas; cambiar o recuperar las claves invalida las sesiones anteriores.
+- Si un fondo compartido pierde conexión, la copia disponible queda en modo consulta. Las escrituras fallidas muestran un error y no se presentan como sincronizadas.
+- Cada workspace admite hasta 150 integrantes y 1.500 movimientos, con un límite adicional de tamaño para respetar la capacidad de un documento Firestore.
+
+### Ejecutar en desarrollo
+
+Requiere Node.js 22 o 24. Desde la carpeta de este repositorio:
+
+```bash
+npm ci
+npm run dev
+```
+
+Abre `http://localhost:5173`. Para trabajar sin conectar el fondo original a Firebase, crea `.env.local` con:
+
+```dotenv
+VITE_FIREBASE_ENABLED=false
+VITE_WORKSPACES_CLOUD_ENABLED=false
+```
+
+### Habilitar workspaces compartidos en Firebase
+
+1. Copia los campos de `env.example.txt` a `.env.local` y coloca la configuración del proyecto Firebase que administras. No reutilices la configuración de otro proyecto.
+2. Instala las dependencias del backend: `npm ci --prefix functions`. Las funciones usan el runtime Node.js 22.
+3. Integra las reglas de `savings_workspaces`, `workspace_secrets` y `workspace_attempts` de `firestore.rules` con las reglas de tu proyecto. El bloque `fondo_comun/app_data` reproduce la compatibilidad del fondo original, cuya clave se valida en el cliente; revisa ese bloque antes de sustituir reglas existentes. Los nuevos workspaces rechazan toda escritura directa y mantienen las claves fuera del documento público.
+4. Despliega las funciones y las reglas revisadas con Firebase CLI (Cloud Functions requiere un proyecto con plan Blaze):
+
+```bash
+firebase deploy --only functions:savings-workspaces,firestore:rules --project TU_PROJECT_ID
+```
+
+5. Establece `VITE_WORKSPACES_CLOUD_ENABLED=true`, reinicia Vite o recompila con `npm run build`, y publica `dist` en tu hosting. Para conectar el fondo original al mismo entorno, retira `VITE_FIREBASE_ENABLED=false`.
+6. Crea un nuevo workspace eligiendo **Compartido · Firebase**. Los enlaces tienen la forma `https://tu-app/?workspace=UUID` y permiten consultar integrantes, celulares registrados y movimientos.
+
+Las claves remotas se derivan con scrypt y las sesiones se firman por workspace. Las actualizaciones usan transacciones y revisión de versión para detectar ediciones simultáneas. No se despliega ningún cambio automáticamente al ejecutar `npm run build`.
+
+### Validación de la función
+
+```bash
+npm test
+npm run build
+firebase emulators:exec --only firestore,functions --project demo-fondo-workspaces "node scripts/workspaces-emulator-check.mjs"
+```
+
+La prueba de emuladores requiere Java 21 o superior, Firebase CLI y las dependencias de `functions`. Usa únicamente el proyecto de demostración. En equipos donde el descubrimiento de funciones tarde más de 10 segundos, establece `FUNCTIONS_DISCOVERY_TIMEOUT=60` en el entorno.
+
+### Archivos principales
+
+- `src/WorkspaceApp.jsx`: selector, navegación y creación de workspaces.
+- `src/hooks/useWorkspace.js`: carga, sesiones y operaciones del fondo activo.
+- `src/components/organisms/`: panel, integrantes, formularios e historial de ahorro.
+- `src/services/workspaceStorage.js` y `workspaceCloud.js`: persistencia local y Firebase.
+- `functions/`: reglas financieras, sesiones y operaciones remotas autorizadas.
+
+---
+
 ## 🌟 Características Principales
 
 * 📊 **Control de Aportes Quincenales**: Gestión de cuotas fijas de $10.000 COP por quincena (Cortes el Día 5 y Día 20).
